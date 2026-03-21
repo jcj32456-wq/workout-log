@@ -1,0 +1,205 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Circuit Training Log</title> 
+    <style> 
+        body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 20px; } 
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 20px; 
+box-shadow: 0 2px 5px rgba(0,0,0,0.1); } 
+        h1 { color: #333; font-size: 24px; text-align: center; } 
+        h2 { color: #555; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 5px; } 
+        .row { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; } 
+        input { width: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; text-align: 
+center; } 
+        button { width: 100%; background: #007aff; color: white; border: none; padding: 15px; 
+border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; } 
+        button:active { background: #0056b3; } 
+        button.secondary { background: #555; }
+        button.secondary:active { background: #333; }
+        .note { font-size: 12px; color: #888; text-align: center; margin-top: 10px; } 
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 12px; padding: 20px; max-width: 90%; max-height: 90vh; overflow-y: auto; width: 100%; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .close-btn { background: #ccc; color: #333; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .log-entry { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .log-entry:last-child { border-bottom: none; }
+        .log-date { font-weight: bold; color: #007aff; margin-bottom: 5px; }
+        .exercise-row { display: flex; justify-content: space-between; font-size: 13px; margin: 3px 0; }
+        .chart { margin: 15px 0; }
+        .chart-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; }
+        .chart-bar { display: flex; align-items: center; margin: 5px 0; }
+        .chart-label { width: 80px; font-size: 12px; }
+        .chart-value { width: 200px; background: #e0e7ff; border-radius: 4px; height: 25px; display: flex; align-items: center; padding: 0 8px; color: #007aff; font-weight: bold; font-size: 12px; }
+    </style> 
+</head> 
+<body> 
+ 
+    <h1>Circuit Training Log</h1> 
+ 
+    <div id="workout-container"> 
+        <!-- Station 3 --> 
+        <div class="card"> 
+            <h2>Station 3: Legs</h2> 
+            <div class="row"><span>Leg Extensions</span><input type="number" id="leg_ext" 
+placeholder="lbs"></div> 
+            <div class="row"><span>Leg Curls</span><input type="number" id="leg_curl" 
+placeholder="lbs"></div> 
+        </div> 
+ 
+        <!-- Station 1 --> 
+        <div class="card"> 
+            <h2>Station 1: Upper</h2> 
+            <div class="row"><span>Chest Press</span><input type="number" id="chest_press" 
+placeholder="lbs"></div> 
+            <div class="row"><span>Lat Pulldown</span><input type="number" id="lat_pull" 
+placeholder="lbs"></div> 
+        </div> 
+ 
+        <!-- Station 2 --> 
+        <div class="card"> 
+            <h2>Station 2: Accessory</h2> 
+            <div class="row"><span>Bicep Curls</span><input type="number" id="curls" 
+placeholder="lbs"></div> 
+            <div class="row"><span>Upright Rows</span><input type="number" id="rows" 
+placeholder="lbs"></div> 
+        </div> 
+    </div> 
+ 
+    <button onclick="saveData()">Save Today's Workout</button> 
+    <button class="secondary" onclick="openLogs()">View Workout Logs</button>
+    <p class="note" id="status">Data is saved locally on your phone.</p> 
+
+    <!-- Logs Modal -->
+    <div id="logsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Workout History</h2>
+                <button class="close-btn" onclick="closeLogs()">✕</button>
+            </div>
+            <div id="logsContainer"></div>
+        </div>
+    </div> 
+ 
+    <script> 
+        function saveData() { 
+            const data = { 
+                leg_ext: document.getElementById('leg_ext').value, 
+                leg_curl: document.getElementById('leg_curl').value, 
+                chest_press: document.getElementById('chest_press').value, 
+                lat_pull: document.getElementById('lat_pull').value, 
+                curls: document.getElementById('curls').value, 
+                rows: document.getElementById('rows').value, 
+                date: new Date().toLocaleDateString(),
+                timestamp: new Date().getTime()
+            }; 
+            
+            // Get existing logs or create new array
+            let logs = JSON.parse(localStorage.getItem('gym_logs')) || [];
+            logs.push(data);
+            localStorage.setItem('gym_logs', JSON.stringify(logs));
+            
+            document.getElementById('status').innerText = "Workout Saved: " + data.date; 
+            alert("Workout Saved!");
+            
+            // Clear form
+            document.getElementById('leg_ext').value = '';
+            document.getElementById('leg_curl').value = '';
+            document.getElementById('chest_press').value = '';
+            document.getElementById('lat_pull').value = '';
+            document.getElementById('curls').value = '';
+            document.getElementById('rows').value = '';
+        } 
+
+        function openLogs() {
+            const logs = JSON.parse(localStorage.getItem('gym_logs')) || [];
+            const logsContainer = document.getElementById('logsContainer');
+            logsContainer.innerHTML = '';
+            
+            if (logs.length === 0) {
+                logsContainer.innerHTML = '<p style="text-align: center; color: #888;">No workouts saved yet.</p>';
+            } else {
+                // Show logs in reverse order (newest first)
+                logs.reverse().forEach((log, index) => {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'log-entry';
+                    logEntry.innerHTML = `
+                        <div class="log-date">${log.date}</div>
+                        <div class="exercise-row"><span>Leg Extensions:</span> <strong>${log.leg_ext || '-'} lbs</strong></div>
+                        <div class="exercise-row"><span>Leg Curls:</span> <strong>${log.leg_curl || '-'} lbs</strong></div>
+                        <div class="exercise-row"><span>Chest Press:</span> <strong>${log.chest_press || '-'} lbs</strong></div>
+                        <div class="exercise-row"><span>Lat Pulldown:</span> <strong>${log.lat_pull || '-'} lbs</strong></div>
+                        <div class="exercise-row"><span>Bicep Curls:</span> <strong>${log.curls || '-'} lbs</strong></div>
+                        <div class="exercise-row"><span>Upright Rows:</span> <strong>${log.rows || '-'} lbs</strong></div>
+                    `;
+                    logsContainer.appendChild(logEntry);
+                });
+                
+                // Add charts
+                const chartsDiv = document.createElement('div');
+                chartsDiv.style.marginTop = '30px';
+                chartsDiv.innerHTML = '<h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Weight Progression</h3>';
+                logsContainer.appendChild(chartsDiv);
+                
+                const exercises = [
+                    { key: 'leg_ext', label: 'Leg Extensions' },
+                    { key: 'leg_curl', label: 'Leg Curls' },
+                    { key: 'chest_press', label: 'Chest Press' },
+                    { key: 'lat_pull', label: 'Lat Pulldown' },
+                    { key: 'curls', label: 'Bicep Curls' },
+                    { key: 'rows', label: 'Upright Rows' }
+                ];
+                
+                exercises.forEach(exercise => {
+                    const values = logs.map(log => parseInt(log[exercise.key]) || 0).filter(v => v > 0);
+                    if (values.length > 0) {
+                        const maxValue = Math.max(...values);
+                        const chartDiv = document.createElement('div');
+                        chartDiv.className = 'chart';
+                        chartDiv.innerHTML = `<div class="chart-title">${exercise.label}</div>`;
+                        
+                        logs.reverse().forEach((log, idx) => {
+                            const value = log[exercise.key];
+                            if (value) {
+                                const percentage = (parseInt(value) / maxValue) * 100;
+                                const barDiv = document.createElement('div');
+                                barDiv.className = 'chart-bar';
+                                barDiv.innerHTML = `
+                                    <div class="chart-label" style="font-size: 11px;">${log.date}</div>
+                                    <div class="chart-value" style="width: ${Math.max(percentage, 30)}px;">${value}</div>
+                                `;
+                                chartDiv.appendChild(barDiv);
+                            }
+                        });
+                        logsContainer.appendChild(chartDiv);
+                        logs.reverse();
+                    }
+                });
+            }
+            
+            document.getElementById('logsModal').classList.add('active');
+        }
+        
+        function closeLogs() {
+            document.getElementById('logsModal').classList.remove('active');
+        }
+
+        // Load previous data on open 
+        window.onload = function() { 
+            const logs = JSON.parse(localStorage.getItem('gym_logs')) || [];
+            if (logs.length > 0) {
+                const lastLog = logs[logs.length - 1];
+                document.getElementById('leg_ext').value = lastLog.leg_ext || '';
+                document.getElementById('leg_curl').value = lastLog.leg_curl || '';
+                document.getElementById('chest_press').value = lastLog.chest_press || '';
+                document.getElementById('lat_pull').value = lastLog.lat_pull || '';
+                document.getElementById('curls').value = lastLog.curls || '';
+                document.getElementById('rows').value = lastLog.rows || '';
+                document.getElementById('status').innerText = "Last workout loaded from: " + lastLog.date;
+            }
+        }; 
+    </script> 
+</body> 
+</html>
